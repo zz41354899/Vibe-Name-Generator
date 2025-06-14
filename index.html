@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Name Generator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <style>
+        body {
+            transition: background-color 0.8s ease;
+        }
+        
+        /* 自定義字體大小調整 */
+        @media (max-width: 640px) {
+            .dynamic-text {
+                font-size: 2.5rem;
+            }
+        }
+        
+        @media (min-width: 641px) and (max-width: 1024px) {
+            .dynamic-text {
+                font-size: 4rem;
+            }
+        }
+        
+        @media (min-width: 1025px) {
+            .dynamic-text {
+                font-size: 5rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-black">
+    <div class="h-screen w-screen flex flex-col justify-center items-center">
+        <!-- 主標題 -->
+        <h1 id="vibeName" class="text-4xl md:text-6xl lg:text-7xl font-bold tracking-wide text-white text-center px-4">
+            Your Vibe Awaits
+        </h1>
+        
+        <!-- 輸入框 -->
+        <input 
+            id="userInput" 
+            type="text" 
+            placeholder="輸入你的名字或關鍵字..." 
+            class="mt-8 px-4 py-3 w-80 max-w-sm bg-white/10 backdrop-blur-sm border border-white/20 rounded-full text-white text-center placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 focus:bg-white/20 transition-all"
+        >
+        
+        <!-- 按鈕容器 -->
+        <div class="flex gap-4 mt-6">
+            <!-- 生成按鈕 -->
+            <button id="generateBtn" class="bg-white text-black px-6 py-3 rounded-full hover:scale-105 transition font-semibold text-lg shadow-lg">
+                Generate My Vibe
+            </button>
+            
+            <!-- 隨機按鈕 -->
+            <button id="randomBtn" class="bg-white/20 text-white border border-white/30 px-6 py-3 rounded-full hover:scale-105 transition font-semibold text-lg shadow-lg backdrop-blur-sm">
+                Random Vibe
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Vibe 名稱陣列
+        const vibeNames = [
+            { name: "Moonlight Coder", emoji: "🌙", color: "#1e1b4b" }, // 深藍
+            { name: "Ocean Pixel", emoji: "🌊", color: "#0c4a6e" }, // 海洋藍
+            { name: "Dream Synth", emoji: "💭", color: "#581c87" }, // 紫色
+            { name: "Retro Spark", emoji: "⚡", color: "#ea580c" }, // 黃橘
+            { name: "Neon Zen", emoji: "🧠", color: "#be185d" }, // 桃紅紫
+            { name: "Void Dancer", emoji: "🕳️", color: "#374151" }, // 深灰
+            { name: "Sunset Stack", emoji: "🌅", color: "#dc2626" }, // 紅橘
+            { name: "Cloudflow Mind", emoji: "☁️", color: "#0891b2" }, // 天藍
+            { name: "Astro Pulse", emoji: "🚀", color: "#7c3aed" }, // 紫色
+            { name: "Chillbyte", emoji: "🎧", color: "#059669" } // 綠色
+        ];
+
+        // 獲取元素
+        const vibeName = document.getElementById('vibeName');
+        const generateBtn = document.getElementById('generateBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        const userInput = document.getElementById('userInput');
+        let isAnimating = false;
+
+        // 響應式字體大小調整
+        function adjustFontSize() {
+            const width = window.innerWidth;
+            if (width <= 640) {
+                vibeName.className = vibeName.className.replace(/text-\w+-\w+/g, 'text-3xl');
+            } else if (width <= 1024) {
+                vibeName.className = vibeName.className.replace(/text-\w+-\w+/g, 'text-5xl');
+            } else {
+                vibeName.className = vibeName.className.replace(/text-\w+-\w+/g, 'text-7xl');
+            }
+        }
+
+        // Vibe 風格陣列（用於生成個人化名稱）
+        const vibeStyles = [
+            { prefix: "Cosmic", suffix: "Dreamer", emoji: "🌌", color: "#1e1b4b" },
+            { prefix: "Digital", suffix: "Soul", emoji: "💫", color: "#581c87" },
+            { prefix: "Neon", suffix: "Spirit", emoji: "✨", color: "#be185d" },
+            { prefix: "Retro", suffix: "Wave", emoji: "🌊", color: "#ea580c" },
+            { prefix: "Cyber", suffix: "Monk", emoji: "🧠", color: "#059669" },
+            { prefix: "Astro", suffix: "Vibe", emoji: "🚀", color: "#7c3aed" },
+            { prefix: "Dream", suffix: "Code", emoji: "💭", color: "#0c4a6e" },
+            { prefix: "Sunset", suffix: "Flow", emoji: "🌅", color: "#dc2626" },
+            { prefix: "Ocean", suffix: "Mind", emoji: "🌊", color: "#0891b2" },
+            { prefix: "Moon", suffix: "Pulse", emoji: "🌙", color: "#374151" }
+        ];
+
+        // 生成個人化 Vibe 名稱
+        function generatePersonalVibe(inputText) {
+            if (!inputText || inputText.trim() === '') {
+                return generateRandomVibe();
+            }
+
+            // 基於輸入文字的第一個字元選擇風格
+            const charCode = inputText.trim().toLowerCase().charCodeAt(0);
+            const styleIndex = charCode % vibeStyles.length;
+            const selectedStyle = vibeStyles[styleIndex];
+            
+            // 清理輸入文字（移除特殊字符，保留中英文）
+            const cleanInput = inputText.trim().replace(/[^\w\u4e00-\u9fff]/g, '');
+            
+            // 生成個人化名稱
+            const personalizedName = `${selectedStyle.prefix} ${cleanInput} ${selectedStyle.suffix}`;
+            
+            return {
+                name: personalizedName,
+                emoji: selectedStyle.emoji,
+                color: selectedStyle.color
+            };
+        }
+
+        // 生成隨機 Vibe
+        function generateRandomVibe() {
+            return vibeNames[Math.floor(Math.random() * vibeNames.length)];
+        }
+
+        // 通用動畫函數
+        function animateVibeChange(newVibe, buttonElement) {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            // 步驟1: 縮小隱藏當前文字
+            gsap.to(vibeName, {
+                opacity: 0,
+                scale: 0.8,
+                duration: 0.8,
+                ease: "power3.out",
+                onComplete: function() {
+                    // 步驟2: 更換文字內容
+                    vibeName.textContent = `${newVibe.name} ${newVibe.emoji}`;
+                    
+                    // 步驟3: 同時改變背景色和文字回復動畫
+                    gsap.to(document.body, {
+                        backgroundColor: newVibe.color,
+                        duration: 0.8,
+                        ease: "power3.out"
+                    });
+                    
+                    gsap.fromTo(vibeName, 
+                        {
+                            opacity: 0,
+                            scale: 1.1
+                        },
+                        {
+                            opacity: 1,
+                            scale: 1,
+                            duration: 0.8,
+                            ease: "power3.out",
+                            onComplete: function() {
+                                isAnimating = false;
+                            }
+                        }
+                    );
+                }
+            });
+
+            // 按鈕按下效果
+            gsap.to(buttonElement, {
+                scale: 0.95,
+                duration: 0.1,
+                yoyo: true,
+                repeat: 1,
+                ease: "power2.out"
+            });
+        }
+
+        // 生成個人化 Vibe
+        function generateVibe() {
+            const inputText = userInput.value;
+            const newVibe = generatePersonalVibe(inputText);
+            animateVibeChange(newVibe, generateBtn);
+        }
+
+        // 生成隨機 Vibe
+        function generateRandom() {
+            const newVibe = generateRandomVibe();
+            animateVibeChange(newVibe, randomBtn);
+        }
+
+        // 事件監聽
+        generateBtn.addEventListener('click', generateVibe);
+        randomBtn.addEventListener('click', generateRandom);
+        
+        // 輸入框按 Enter 鍵生成
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !isAnimating) {
+                e.preventDefault();
+                generateVibe();
+            }
+        });
+        
+        // 鍵盤事件（按空白鍵隨機生成）
+        document.addEventListener('keydown', function(e) {
+            if (e.code === 'Space' && !isAnimating && document.activeElement !== userInput) {
+                e.preventDefault();
+                generateRandom();
+            }
+        });
+
+        // 視窗大小改變時調整字體
+        window.addEventListener('resize', adjustFontSize);
+        
+        // 初始化字體大小
+        adjustFontSize();
+
+        // 初始動畫（頁面載入時的入場效果）
+        gsap.fromTo([vibeName, userInput, generateBtn, randomBtn], 
+            {
+                opacity: 0,
+                y: 30
+            },
+            {
+                opacity: 1,
+                y: 0,
+                duration: 1.2,
+                ease: "power3.out",
+                stagger: 0.2
+            }
+        );
+        
+        // 按鈕 hover 效果增強
+        [generateBtn, randomBtn].forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!isAnimating) {
+                    gsap.to(btn, {
+                        scale: 1.05,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                }
+            });
+            
+            btn.addEventListener('mouseleave', function() {
+                if (!isAnimating) {
+                    gsap.to(btn, {
+                        scale: 1,
+                        duration: 0.3,
+                        ease: "power2.out"
+                    });
+                }
+            });
+        });
+
+        // 輸入框 focus 效果
+        userInput.addEventListener('focus', function() {
+            gsap.to(userInput, {
+                scale: 1.02,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+        });
+
+        userInput.addEventListener('blur', function() {
+            gsap.to(userInput, {
+                scale: 1,
+                duration: 0.3,
+                ease: "power2.out"
+            });
+        });
+    </script>
+</body>
+</html> 
